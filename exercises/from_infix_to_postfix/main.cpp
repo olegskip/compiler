@@ -1,7 +1,12 @@
+/*
+ * A translator for simple expressions
+ * Tranform infix to postfix
+ * Works only with one digit numbers
+ */
+
 #include <iostream>
 #include <exception>
 #include <string>
-
 
 class Parser
 {
@@ -62,7 +67,7 @@ private:
 
 	void error()
 	{
-		throw std::logic_error("");
+		throw std::logic_error("Syntax error");
 	}
 
 	size_t lookaheadIndex = 0;
