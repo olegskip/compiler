@@ -7,8 +7,8 @@ enum class TokenType
 {
 	OPERATOR = 256,
 	INTEGER,
-	RESERVED,
-	VARIABLE
+	KEYWORD,
+	IDENTIFIER
 };
 
 class Token

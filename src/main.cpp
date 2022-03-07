@@ -2,6 +2,6 @@
 
 int main()
 {
-	Lexer lexer("test    12 + 34 - 45");
+	Lexer lexer("if    12 + 34 - 45");
 	return 0;
 }

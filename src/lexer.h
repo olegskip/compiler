@@ -1,12 +1,9 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include <vector>
-#include <map>
-#include <memory>
 #include <stdexcept>
 
-#include "token.h"
+#include "symbol_table.h"
 
 class Lexer
 {
@@ -16,13 +13,13 @@ public:
 	Lexer(const Lexer &&lexer) = delete;
 	Lexer &operator=(const Lexer &lexer) = delete;
 
-	std::vector<std::shared_ptr<Token>> tokens;
-
 private:
-	std::vector<std::shared_ptr<Token>> scan();
+	std::shared_ptr<Token> getNextToken();
+	void throwError(std::string word);
 
-	std::map<std::string, std::shared_ptr<Token>> words;
-	void addWord(std::string lexeme, TokenType tokenType) noexcept;
+	size_t currentLine = 0, currentCharIndex = 0;
+
+	SymbolTable symbolTable;
 
 	const std::string textToScan;
 };

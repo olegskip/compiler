@@ -2,61 +2,64 @@
 
 Lexer::Lexer(std::string textToScan_): textToScan(std::move(textToScan_))
 {
-	addWord("+", TokenType::OPERATOR);
-	addWord("-", TokenType::OPERATOR);
-	addWord("test", TokenType::RESERVED);
-
-	tokens = scan();
+	symbolTable.addWord("+", TokenType::OPERATOR);
+	symbolTable.addWord("-", TokenType::OPERATOR);
+	symbolTable.addWord("if", TokenType::KEYWORD);
 }
 
-std::vector<std::shared_ptr<Token>> Lexer::scan()
+std::shared_ptr<Token> Lexer::getNextToken()
 {
-	std::vector<std::shared_ptr<Token>> output;
-	for(size_t currentCharIndex = 0; currentCharIndex < textToScan.size(); ) {
-		if(textToScan[currentCharIndex] == ' ' || textToScan[currentCharIndex] == '\t' || textToScan[currentCharIndex] == '\n') {
-			currentCharIndex++;
-			continue;
+	if(currentCharIndex >= textToScan.size())
+		return {};
+
+	if(textToScan[currentCharIndex] == ' ' || textToScan[currentCharIndex] == '\t' || textToScan[currentCharIndex] == '\n') {
+		if(textToScan[currentCharIndex] == '\n')
+			currentLine++;
+		currentCharIndex++;
+		return getNextToken();
+	}
+
+	std::string currentWord = "";
+
+	// if the first char is a digit then it must be a number
+	if(isdigit(textToScan[currentCharIndex])) {
+		while(isdigit(textToScan[currentCharIndex])) {
+			currentWord.push_back(textToScan[currentCharIndex++]);
 		}
 
-		std::string currentWord = "";
-
-		if(isdigit(textToScan[currentCharIndex])) {
-			while(isdigit(textToScan[currentCharIndex])) {
-				currentWord.push_back(textToScan[currentCharIndex++]);
-			}
-
-			output.push_back(std::make_shared<Integer>(currentWord));
+		return std::make_shared<Integer>(currentWord);
+	}
+	// if the first char is a letter then it may be either an identifier or a keyword
+	else if(isalpha(textToScan[currentCharIndex])) {
+		while(isalpha(textToScan[currentCharIndex]) || isdigit(textToScan[currentCharIndex])) {
+			currentWord.push_back(textToScan[currentCharIndex++]);
 		}
-		else if(isalpha(textToScan[currentCharIndex])) {
-			while(isalpha(textToScan[currentCharIndex]) || isdigit(textToScan[currentCharIndex])) {
-				currentWord.push_back(textToScan[currentCharIndex++]);
-			}
 
-			if(auto wordInMap = words[currentWord]; wordInMap) {
-				output.push_back(wordInMap);
-			}
-			else {
-				addWord(currentWord, TokenType::VARIABLE);
-				output.push_back(words[currentWord]);
-			}
+		// if the word is already in the table we can just return it
+		if(auto wordInMap = symbolTable.getWord(currentWord); wordInMap) {
+			return wordInMap;
 		}
 		else {
-			while(textToScan[currentCharIndex] != ' ' && textToScan[currentCharIndex] != '\t' && textToScan[currentCharIndex] != '\n') {
-				currentWord.push_back(textToScan[currentCharIndex++]);
-			}
-			if(auto wordInMap = words[currentWord]; wordInMap) {
-				output.push_back(wordInMap);
-			}
-			else {
-				throw std::invalid_argument("Lexical error");
-			}
+			return symbolTable.addWord(currentWord, TokenType::IDENTIFIER);
+		}
+	}
+	// some words(e.g. "+", ">=") don't contain letter or digits so we read the word until we meet a whitespace
+	else {
+		while(textToScan[currentCharIndex] != ' ' && textToScan[currentCharIndex] != '\t' && textToScan[currentCharIndex] != '\n') {
+			currentWord.push_back(textToScan[currentCharIndex++]);
+		}
+		if(auto wordInMap = symbolTable.getWord(currentWord); wordInMap) {
+			return wordInMap;
+		}
+		else {
+			throwError(currentWord);
 		}
 	}
 
-	return output;
+	return {};
 }
 
-void Lexer::addWord(std::string lexeme, TokenType tokenType) noexcept
+void Lexer::throwError(std::string word)
 {
-	words.insert({lexeme, std::make_shared<Token>(lexeme, tokenType)});
+	throw std::invalid_argument("Lexical error at line " + std::to_string(currentLine) + " Couldn't resolve " + word);
 }
